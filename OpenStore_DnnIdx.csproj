@@ -37,6 +37,10 @@
       <HintPath>_external\DotNetNuke.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="RazorEngine">
+      <HintPath>_external\RazorEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
@@ -57,6 +61,7 @@
     <None Include="Installation\OpenStore_DnnIdx.dnn" />
     <None Include="LICENSE" />
     <None Include="README.md" />
+    <None Include="Themes\config\Default\dnnidxdetail.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="NBrightBuy">
@@ -73,13 +78,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="App_LocalResources\" />
     <Folder Include="render\" />
-    <Folder Include="Themes\config\default\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="plugin.xml" />
     <Content Include="pluginos_dnnidx.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="App_LocalResources\DnnIdx.resx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

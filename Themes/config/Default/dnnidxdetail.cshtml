@@ -1,0 +1,16 @@
+@inherits NBrightBuy.render.NBrightBuyRazorTokens<NBrightRazor>
+@using System
+@using System.Collections.Generic
+@using System.Linq
+@using NBrightCore.common
+@using NBrightDNN
+@using Nevoweb.DNN.NBrightBuy.Components;
+@{
+    // assign Model, so we can resolve var in VS
+    var product = (ProductData)Model.List.First();
+    var info = (NBrightInfo)product.Info;
+}
+@(product.ProductName)
+@Raw(info.GetXmlProperty("genxml/lang/genxml/edt/description"))
+@info.GetXmlProperty("genxml/lang/genxml/textbox/txtsummary")
+@info.GetXmlProperty("genxml/textbox/txtproductref")

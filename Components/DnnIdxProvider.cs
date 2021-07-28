@@ -15,9 +15,15 @@ using DotNetNuke.Services.Search;
 using DotNetNuke.Services.Search.Controllers;
 using DotNetNuke.Services.Search.Entities;
 using DotNetNuke.Services.Search.Internals;
+using NBrightBuy.render;
 using NBrightCore.common;
+using NBrightCore.TemplateEngine;
 using NBrightDNN;
+using NBrightDNN.render;
 using Nevoweb.DNN.NBrightBuy.Components;
+using RazorEngine;
+using RazorEngine.Configuration;
+using RazorEngine.Templating;
 
 
 namespace Nevoweb.DNN.NBrightBuy.Providers
@@ -27,6 +33,8 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
     /// </summary>
     public class DnnIdxProvider : Components.Interfaces.SchedulerInterface 
     {
+        public StoreSettings StoreSettings { get; set; }
+
         /// <summary>
         /// 
         /// </summary>
@@ -45,7 +53,7 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
                 var nbssetting = objCtrl.GetByGuidKey(portalId, -1, "SETTINGS", "NBrightBuySettings");
                 if (nbssetting != null)
                 {
-                    var storeSettings = new StoreSettings(portalId);
+                    StoreSettings = new StoreSettings(portalId);
                     var pluginData = new PluginData(portalId); // get plugin data to see if this scheduler is active on this portal 
                     var plugin = pluginData.GetPluginByCtrl("dnnsearchindex");
                     if (plugin != null && plugin.GetXmlPropertyBool("genxml/interfaces/genxml[1]/checkbox/active"))
@@ -69,7 +77,7 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
                         var lastrundate = DateTime.Now.AddYears(-99);
                         if (Utils.IsDate(lastrun)) lastrundate = Convert.ToDateTime(lastrun);
 
-                        var rtnmsg = DoProductIdx(portal, lastrundate, storeSettings.DebugMode);
+                        var rtnmsg = DoProductIdx(portal, StoreSettings, lastrundate, StoreSettings.DebugMode);
                         setting.SetXmlProperty("genxml/lastrun", DateTime.Now.ToString("s"), TypeCode.DateTime);
                         objCtrl.Update(setting);
                         if (rtnmsg != "") return rtnmsg;
@@ -86,7 +94,7 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
 
         }
 
-        private String DoProductIdx(DotNetNuke.Entities.Portals.PortalInfo portal, DateTime lastrun, Boolean debug)
+        private string DoProductIdx(PortalInfo portal, StoreSettings storeSettings, DateTime lastrun, bool debug)
         {
             if (debug)
             {
@@ -94,7 +102,6 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
             }
             var searchDocs = new List<SearchDocument>();
             var culturecodeList = DnnUtils.GetCultureCodeList(portal.PortalID);
-            var storeSettings = new StoreSettings(portal.PortalID);
             foreach (var lang in culturecodeList)
             {
                 var strContent = "";
@@ -104,11 +111,30 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
                 if (debug) strFilter = "";
                 var l = objCtrl.GetList(portal.PortalID, -1, "PRD", strFilter);
 
+                var templData = GetRazorTemplateData(portal, storeSettings, "dnnidxdetail.cshtml", "/DesktopModules/NBright/OpenStore_DnnIdx", "config", lang);
+
+                var settings = new Dictionary<string, string>();
+                settings.Add("userid", "-1");
+
                 foreach (var p in l)
                 {
                     var prodData = new ProductData(p.ItemID, portal.PortalID, lang);
 
-                    strContent = prodData.Info.GetXmlProperty("genxml/textbox/txtproductref") + " : " + prodData.SEODescription + " " + prodData.SEOName + " " + prodData.SEOTitle;
+                    var l1 = new List<object>();
+                    l1.Add(prodData);
+
+                    var nbRazor = new NBrightRazor(l1, settings);
+                    nbRazor.FullTemplateName = "config.DnnIdxDetails";
+                    nbRazor.TemplateName = "dnnidxdetail.cshtml";
+                    nbRazor.ThemeFolder = "config";
+                    nbRazor.Lang = lang;
+
+                    //strContent = NBrightBuyUtils.RazorTemplRenderNoCache("dnnidxdetails.cshtml", 
+                    //    -1, $"dnnidxdetails-{p.ItemID}", p,
+                    //    "/DesktopModules/NBright/OpenStore_DnnIdx", "config", lang, null);
+
+                    strContent = RazorRender(nbRazor, templData, "", storeSettings.DebugMode);
+                    // strContent = prodData.Info.GetXmlProperty("genxml/textbox/txtproductref") + " : " + prodData.SEODescription + " " + prodData.SEOName + " " + prodData.SEOTitle;
 
                     if (strContent != "")
                     {
@@ -148,11 +174,56 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
             InternalSearchController.Instance.Commit();
 
 
-            return " - NBS-DNNIDX scheduler ACTIVATED ";
+            return " - OS-DNNIDX scheduler ACTIVATED ";
 
         }
 
+        private string GetRazorTemplateData(PortalInfo portal, StoreSettings storeSettings, string templatename, string templateControlPath,
+            string themeFolder = "config", string lang = "")
+        {
+            var controlMapPath = portal.HomeDirectoryMapPath + "..\\..\\DesktopModules\\NBright\\OpenStore_DnnIdx";
+            var templCtrl = new TemplateGetter(portal.HomeDirectoryMapPath, controlMapPath, "Themes\\config\\" + storeSettings.ThemeFolder, "Themes\\config\\" );
+            if (lang == "") lang = Utils.GetCurrentCulture();
+            var templ = templCtrl.GetTemplateData(templatename, lang);
+            return templ;
+        }
 
+        private IRazorEngineService _razorService;
+        private IRazorEngineService RazorService
+        {
+            get
+            {
+                if (_razorService == null)
+                {
+                    var config = new TemplateServiceConfiguration();
+                    config.Debug = StoreSettings.DebugMode;
+                    config.BaseTemplateType = typeof(NBrightBuyRazorTokens<>);
+                    _razorService = RazorEngineService.Create(config);
+                }
+
+                return _razorService;
+            }
+        }
+        public  string RazorRender(Object info, string razorTempl, string templateKey, Boolean debugMode = false)
+        {
+            var result = "";
+            try
+            {
+                // do razor test
+
+                Engine.Razor = RazorService;
+                var hashCacheKey = NBrightBuyUtils.GetMd5Hash(razorTempl);
+
+                result = Engine.Razor.RunCompile(razorTempl, hashCacheKey, null, info);
+
+            }
+            catch (Exception ex)
+            {
+                result = ex.ToString();
+            }
+
+            return result;
+        }
 
     }
 }

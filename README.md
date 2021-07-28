@@ -29,3 +29,11 @@ Search Type:  The OpenStore_DnnIdx uses a tab searchtype.
 Although each product is not a tab in DNN, the resulting detail is regarded as a tab with a uinque URL.
 For this reason we use SearchHelper.Instance.GetSearchTypeByName("tab").SearchTypeId
 
+Customization
+-------------
+
+If you need to change the information that's being indexed, you can alter /Themes/config/default/dnnidxdetail.cshtml for that.
+
+Like al razor scripts in OpenStore, you're advised to copy this file over to /Portals/?/Themes/config/default/dnnidxdetail.cshtml and change it there.
+
+

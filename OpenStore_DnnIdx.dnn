@@ -20,7 +20,7 @@
 					<resourceFiles>
 						<basePath>DesktopModules\NBright\OpenStore_DnnIdx</basePath>
 						<resourceFile>
-							<name>OpenStore_DnnIdx_Resource.zip</name>
+							<name>Resource.zip</name>
 						</resourceFile>
 					</resourceFiles>
 				</component>
@@ -38,8 +38,8 @@
 						<basePath>DesktopModules\NBright\NBrightBuy\Plugins</basePath>
 						<file>
 							<path></path>
-							<name>plugin.xml</name>
-							<sourceFileName>plugin.xml</sourceFileName>
+							<name>pluginos_dnnidx.xml</name>
+							<sourceFileName>pluginos_dnnidx.xml</sourceFileName>
 						</file>
 					</files>
 				</component>

@@ -146,7 +146,7 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
                         var searchDoc = new SearchDocument();
                         // Assigns as a Search key the SearchItems' 
                         searchDoc.UniqueKey = prodData.Info.ItemID.ToString("");
-                        searchDoc.QueryString = "ref=" + prodData.Info.GetXmlProperty("genxml/textbox/txtproductref");
+                        searchDoc.QueryString = "eid=" + prodData.Info.ItemID;
                         searchDoc.Title = prodData.ProductName;
                         searchDoc.Body = strContent;
                         searchDoc.Description = strDescription;

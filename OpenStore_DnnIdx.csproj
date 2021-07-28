@@ -58,7 +58,7 @@
   <ItemGroup>
     <None Include="dnnpack.config" />
     <None Include="DNNpackager.dnnpack" />
-    <None Include="Installation\OpenStore_DnnIdx.dnn" />
+    <None Include="OpenStore_DnnIdx.dnn" />
     <None Include="LICENSE" />
     <None Include="README.md" />
     <None Include="Themes\config\Default\dnnidxdetail.cshtml" />
@@ -78,13 +78,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Installation\" />
     <Folder Include="render\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="pluginos_dnnidx.xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="App_LocalResources\DnnIdx.resx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

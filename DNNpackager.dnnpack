@@ -1,5 +1,5 @@
 <root>
-	<version>1.4.1</version>
+	<version>1.0.0</version>
   <websitedestrelpath>\DesktopModules\NBright\OpenStore_DnnIdx</websitedestrelpath>
   <websitedestbinrelpath>\bin</websitedestbinrelpath>
 	<!-- Include only files that match the regular expression -->
@@ -19,6 +19,7 @@
   <file include='false'>
   </file>
   <file include='true'>
+    <value>\pluginos_dnnidx.xml</value>
   </file>
 	<assembly>
 		<value>OpenStore_DnnIdx.dll</value>

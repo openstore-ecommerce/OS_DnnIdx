@@ -7,12 +7,12 @@
     <name update="save">DnnIdx</name>
     <icon update="save" />
     <group update="save">Admin</group>
-    <path update="save" />
+    <path update="save">/DesktopModules/NBright/OpenStore_DnnIdx/pluginos_dnnidx.xml</path>
     <help update="save" />
     <description update="save" />
   </textbox>
   <checkbox>
-    <hidden update="save">False</hidden>
+    <hidden update="save">True</hidden>
   </checkbox>
   <dropdownlist />
   <checkboxlist>
@@ -31,7 +31,7 @@
       <hidden />
       <textbox>
         <assembly>OpenStore_DnnIdx</assembly>
-        <namespaceclass>Nevoweb.DNN.NBrightBuy.Providers</namespaceclass>
+        <namespaceclass>Nevoweb.DNN.NBrightBuy.Providers.DnnIdxProvider</namespaceclass>
       </textbox>
       <checkbox>
         <active>True</active>

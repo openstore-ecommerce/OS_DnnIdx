@@ -10,7 +10,7 @@ Installation
 
 - Install the OpenStore_DnnIdx_*.*.*_Install.zip as a normal DNN module, through the DNN extension.
 - Go into the NBS Back Office>Admin>Plugins. Edit and activate the "IBF Index DNN Search" plugin listed.
-- Ensure the NBS scheuler is running on the DNN scheduler. http://nbsdocs.nbrightproject.org/Documentation/Integratorguide/Setup.aspx
+- Ensure the NBS scheuler is running on the DNN scheduler. https://doc.openstore-ecommerce.com/#11498
 
 Operation
 ---------

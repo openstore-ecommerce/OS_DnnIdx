@@ -3,7 +3,7 @@ OpenStore_DnnIdx Plugin
 
 This DNN module is a plugin for OpenStore v4.  It enables products to be indexed into the standard DNN search database.
 
-It requires a minimum version of DNN9.7.1 and OpenStore 4.5.
+It requires a minimum version of DNN9.7.1 and OpenStore 4.1.5.
 
 Installation
 ------------

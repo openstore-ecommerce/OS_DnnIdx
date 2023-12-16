@@ -31,7 +31,7 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
     /// <summary>
     /// Implement DNN search Index
     /// </summary>
-    public class DnnIdxProvider : Components.Interfaces.SchedulerInterface 
+    public class DnnIdxProvider : Components.Interfaces.SchedulerInterface
     {
         public StoreSettings StoreSettings { get; set; }
 
@@ -63,13 +63,15 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
                         var setting = objCtrl.GetByGuidKey(portalId, -1, "DNNIDXSCHEDULER", "DNNIDXSCHEDULER");
                         if (setting == null)
                         {
-                            setting = new NBrightInfo(true);
-                            setting.ItemID = -1;
-                            setting.PortalId = portalId;
-                            setting.TypeCode = "DNNIDXSCHEDULER";
-                            setting.GUIDKey = "DNNIDXSCHEDULER";
-                            setting.ModuleId = -1;
-                            setting.XMLData = "<genxml></genxml>";
+                            setting = new NBrightInfo(true)
+                            {
+                                ItemID = -1,
+                                PortalId = portalId,
+                                TypeCode = "DNNIDXSCHEDULER",
+                                GUIDKey = "DNNIDXSCHEDULER",
+                                ModuleId = -1,
+                                XMLData = "<genxml></genxml>"
+                            };
                         }
 
 
@@ -96,15 +98,15 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
 
         private string DoProductIdx(PortalInfo portal, StoreSettings storeSettings, DateTime lastrun, bool debug)
         {
-            if (debug)
-            {
-                InternalSearchController.Instance.DeleteAllDocuments(portal.PortalID, SearchHelper.Instance.GetSearchTypeByName("tab").SearchTypeId);
-            }
+            var tags = new List<string> { "osproduct" };
+
+            var productQueryStringsToRemove = new List<string>();
+            var processedQueryStrings = new List<string>();
+
             var searchDocs = new List<SearchDocument>();
             var culturecodeList = DnnUtils.GetCultureCodeList(portal.PortalID);
             foreach (var lang in culturecodeList)
             {
-                var strContent = "";
                 // select all products
                 var objCtrl = new NBrightBuyController();
                 var strFilter = " and NB1.ModifiedDate > convert(datetime,'" + lastrun.ToString("s") + "') ";
@@ -113,15 +115,32 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
 
                 var templData = GetRazorTemplateData(portal, storeSettings, "dnnidxdetail.cshtml", "/DesktopModules/NBright/OpenStore_DnnIdx", "config", lang);
 
-                var settings = new Dictionary<string, string>();
-                settings.Add("userid", "-1");
+                var settings = new Dictionary<string, string>
+                {
+                    { "userid", "-1" }
+                };
 
                 foreach (var p in l)
                 {
                     var prodData = new ProductData(p.ItemID, portal.PortalID, lang);
 
-                    var l1 = new List<object>();
-                    l1.Add(prodData);
+                    var uniqueKey = $"os-item-{p.ItemID}-{lang}";
+                    var queryString = $"eid={prodData.Info.ItemID}";
+
+                    var isHidden = prodData.Info.GetXmlPropertyBool("genxml/checkbox/chkishidden");
+                    var isDisabled = prodData.Info.GetXmlPropertyBool("genxml/checkbox/chkdisable");
+                    if (isHidden || isDisabled)
+                    {
+                        if (!productQueryStringsToRemove.Contains(queryString))
+                        {
+                            productQueryStringsToRemove.Add(queryString);
+                        }
+                        continue;
+                    }
+
+                    var l1 = new List<object> { prodData };
+
+                    if (!processedQueryStrings.Contains(queryString)) processedQueryStrings.Add(queryString);
 
                     var nbRazor = new NBrightRazor(l1, settings);
                     nbRazor.FullTemplateName = "config.DnnIdxDetails";
@@ -129,35 +148,23 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
                     nbRazor.ThemeFolder = "config";
                     nbRazor.Lang = lang;
 
-                    //strContent = NBrightBuyUtils.RazorTemplRenderNoCache("dnnidxdetails.cshtml", 
-                    //    -1, $"dnnidxdetails-{p.ItemID}", p,
-                    //    "/DesktopModules/NBright/OpenStore_DnnIdx", "config", lang, null);
-
-                    strContent = RazorRender(nbRazor, templData, "", storeSettings.DebugMode);
-                    // strContent = prodData.Info.GetXmlProperty("genxml/textbox/txtproductref") + " : " + prodData.SEODescription + " " + prodData.SEOName + " " + prodData.SEOTitle;
+                    var strContent = RazorRender(nbRazor, templData, "", storeSettings.DebugMode);
 
                     if (strContent != "")
                     {
-                        var tags = new List<String>();
-                        tags.Add("osproduct");
-
                         //Get the description string
                         string strDescription = HtmlUtils.Shorten(HtmlUtils.Clean(strContent, false), 100, "...");
                         var searchDoc = new SearchDocument();
                         // Assigns as a Search key the SearchItems' 
-                        searchDoc.UniqueKey = prodData.Info.ItemID.ToString("");
-                        searchDoc.QueryString = "eid=" + prodData.Info.ItemID;
+                        searchDoc.UniqueKey = uniqueKey;
+                        searchDoc.QueryString = queryString;
                         searchDoc.Title = prodData.ProductName;
                         searchDoc.Body = strContent;
                         searchDoc.Description = strDescription;
-                        if (debug)
-                            searchDoc.ModifiedTimeUtc = DateTime.Now.Date;
-                        else
-                            searchDoc.ModifiedTimeUtc = prodData.Info.ModifiedDate;
+                        searchDoc.ModifiedTimeUtc = prodData.Info.ModifiedDate;
                         searchDoc.AuthorUserId = 1;
                         searchDoc.TabId = storeSettings.ProductDetailTabId;
                         searchDoc.PortalId = portal.PortalID;
-                        searchDoc.SearchTypeId = SearchHelper.Instance.GetSearchTypeByName("tab").SearchTypeId;
                         searchDoc.CultureCode = lang;
                         searchDoc.Tags = tags;
                         //Add Module MetaData
@@ -169,12 +176,17 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
                 }
             }
 
+            // remove old products
+            foreach (var removeQs in productQueryStringsToRemove)
+            {
+                InternalSearchController.Instance.DeleteSearchDocument(new SearchDocument() { QueryString = removeQs });
+            }
+
             //Index
             InternalSearchController.Instance.AddSearchDocuments(searchDocs);
             InternalSearchController.Instance.Commit();
 
-
-            return " - OS-DNNIDX scheduler ACTIVATED ";
+            return " - OS-DNNIDX scheduler SUCCEEDED ";
 
         }
 
@@ -182,7 +194,7 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
             string themeFolder = "config", string lang = "")
         {
             var controlMapPath = portal.HomeDirectoryMapPath + "..\\..\\DesktopModules\\NBright\\OpenStore_DnnIdx";
-            var templCtrl = new TemplateGetter(portal.HomeDirectoryMapPath, controlMapPath, "Themes\\config\\" + storeSettings.ThemeFolder, "Themes\\config\\" );
+            var templCtrl = new TemplateGetter(portal.HomeDirectoryMapPath, controlMapPath, "Themes\\config\\" + storeSettings.ThemeFolder, "Themes\\config\\");
             if (lang == "") lang = Utils.GetCurrentCulture();
             var templ = templCtrl.GetTemplateData(templatename, lang);
             return templ;
@@ -204,7 +216,7 @@ namespace Nevoweb.DNN.NBrightBuy.Providers
                 return _razorService;
             }
         }
-        public  string RazorRender(Object info, string razorTempl, string templateKey, Boolean debugMode = false)
+        public string RazorRender(Object info, string razorTempl, string templateKey, Boolean debugMode = false)
         {
             var result = "";
             try

@@ -1,6 +1,6 @@
 ﻿<dotnetnuke type="Package" version="5.0">
 	<packages>
-		<package name="OpenStore_DnnIdx" type="Module" version="1.0.0">
+		<package name="OpenStore_DnnIdx" type="Module" version="1.1.0">
 			<friendlyName>OpenStore_DnnIdx</friendlyName>
 			<description>OpenStore Index products in DNN search</description>
 			<iconFile />
